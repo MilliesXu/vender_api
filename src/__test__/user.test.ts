@@ -5,6 +5,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server'
 
 import { createServer } from '../utils/server'
 import { createUserService, deleteUserService, getUserByEmailService } from '../services/userService'
+import { signInJWT } from '../utils/jwt'
+import { createSessionService } from '../services/authService'
 
 const app = createServer()
 
@@ -17,6 +19,8 @@ const userPayload = {
 }
 
 const userId = new mongoose.Types.ObjectId().toString()
+let id: string
+let sessionId: string
 
 describe('User', () => {
   beforeAll(async () => {
@@ -90,6 +94,7 @@ describe('User', () => {
   describe('Verified user and success', () => {
     it('Should return 200, body, and successMessage', async () => {
       const user = await getUserByEmailService(userPayload.email)
+      id = user?._id
       const { body, statusCode } = await supertest(app).get(`/api/user/${user?._id}/${user?.verificationCode}`)
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
@@ -99,6 +104,27 @@ describe('User', () => {
           lastname: user?.lastname,
           verified: true
         }
+      })
+    })
+  })
+  describe('Get user profile but not logged in', () => {
+    it('Should return 401', async () => {
+      await supertest(app).get('/api/user/').expect(401)
+    })
+  })
+  describe('Get user profile and success', () => {
+    it('Should return 200, and user profile', async () => {
+      const session = await createSessionService(id)
+      const accessToken = signInJWT({ userId: id, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
+
+      const { body, statusCode } = await supertest(app).get('/api/user/')
+        .set('Cookie', `accessToken=${accessToken}`)
+
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        firstname: userPayload.firstname,
+        lastname: userPayload.lastname,
+        email: userPayload.email
       })
     })
   })

@@ -1,12 +1,13 @@
 import express from 'express'
 
-import { getUserHandler, createUserHandler, verificationUserHandler } from '../controllers/userController'
+import { getUserProfileHandler, createUserHandler, verificationUserHandler } from '../controllers/userController'
 import { createUserSchema } from '../schemas/userSchema'
 import validateRequest from '../middlewares/validateRequest'
+import deserializeUser from '../middlewares/deserializeUser'
 
 const userRoute = express.Router()
 
-userRoute.get('/', getUserHandler)
+userRoute.get('/', deserializeUser, getUserProfileHandler)
 userRoute.post('/', validateRequest(createUserSchema), createUserHandler)
 userRoute.get('/:id/:verificationCode', verificationUserHandler)
 

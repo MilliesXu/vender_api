@@ -18,7 +18,6 @@ const userPayload = {
   passwordConfirmation: 'erwinxu13'
 }
 let userId: string
-let sessionId: string
 
 describe('Auth', () => {
   beforeAll(async () => {

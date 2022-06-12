@@ -14,6 +14,23 @@ export const getUserHandler = async (req: Request, res: Response, next: NextFunc
   }
 }
 
+export const getUserProfileHandler = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = res.locals.user.userId
+
+    const user = await getUserByIdService(userId)
+    if (!user) throw new MyError('Not authorized', 401)
+
+    res.send({
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email
+    })
+  } catch (error: any) {
+    next(new MyError(error.message, error.code))
+  }
+}
+
 export const createUserHandler = async (req: Request<{}, {}, CreateUserInput>, res: Response, next: NextFunction) => {
   try {
     const body = req.body
