@@ -1,6 +1,7 @@
 import { DocumentType } from '@typegoose/typegoose'
 import { MyError } from '../middlewares/errorHandler'
 import UserModel, { User } from '../models/UserModel'
+import { UpdateUserInput } from '../schemas/userSchema'
 
 export const createUserService = async (input: Partial<User>) => {
   return await UserModel.create(input)
@@ -36,4 +37,14 @@ export const validatePassword = async (user: DocumentType<User>, password: strin
   const isValid = await user.validatePassword(password)
 
   if (!isValid) throw new MyError('Invalid email or password', 401)
+}
+
+export const updateUserProfileService = async (user: DocumentType<User>, updateData: UpdateUserInput) => {
+  user.firstname = updateData.firstname
+  user.lastname = updateData.lastname
+  user.email = updateData.email
+
+  await user.save()
+
+  return user
 }
