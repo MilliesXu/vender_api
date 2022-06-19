@@ -15,7 +15,9 @@ const userPayload = {
   lastname: 'Xu',
   email: 'winzchip@gmail.com',
   password: 'erwinxu13',
-  passwordConfirmation: 'erwinxu13'
+  passwordConfirmation: 'erwinxu13',
+  passwordResetCode: '',
+  userId: null
 }
 
 const userId = new mongoose.Types.ObjectId().toString()
@@ -159,7 +161,7 @@ describe('User', () => {
         .expect(400)
     })
   })
-  describe('Update user profile but user not verifie', () => {
+  describe('Update user profile but user not verified', () => {
     it('Should be return 400', async () => {
       const user = await createUserService({
         firstname: userPayload.firstname,
@@ -196,6 +198,103 @@ describe('User', () => {
           lastname: 'Smith',
           verified: true
         }
+      })
+    })
+  })
+  describe('Request change password, but not send data', () => {
+    it('Should return 400', async () => {
+      await supertest(app).get('/api/user/requestResetPassword')
+        .expect(400)
+    })
+  })
+  describe('Request change password but email not exist', () => {
+    it('Should return 400', async () => {
+      await supertest(app).get('/api/user/requestResetPassword')
+        .send({
+          email: 'noonseuse@gmail.com'
+        })
+        .expect(400)
+    })
+  })
+  describe('Request change password but user not verified', () => {
+    it('Should return 400', async () => {
+      await supertest(app).get('/api/user/requestResetPassword')
+        .send({
+          email: 'testemail3@email.com'
+        })
+        .expect(400)
+    })
+  })
+  describe('Request change password and success', () => {
+    it('Should return 400', async () => {
+      const { body, statusCode } = await supertest(app).get('/api/user/requestResetPassword')
+        .send({
+          email: 'winzchip@gmail.com'
+        })
+      
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        successMessage: 'A verification email has been sent'
+      })
+    })
+  })
+  describe('Change password but no data send', () => {
+    it('Should return 400', async () => {
+      await supertest(app).post('/api/user/resetPassword/1234567/askdljiow231')
+        .expect(400)
+    })
+  })
+  describe('Change password but password not match', () => {
+    it('Should return 400', async () => {
+      await supertest(app).post('/api/user/resetPassword/1234567/askdljiow231')
+        .send({
+          password: 'erwinxu13',
+          passwordConfirmation: 'erwinxu'
+        })
+        .expect(400)
+    })
+  })
+  describe('Change password but user id not exist', () => {
+    it('Should return 400', async () => {
+      await supertest(app).post(`/api/user/resetPassword/${userId}/askdljiow231`)
+        .send({
+          password: 'erwinxu13',
+          passwordConfirmation: 'erwinxu13'
+        })
+        .expect(400)
+    })
+  })
+  describe('Change password but password reset code is wrong', () => {
+    it('Should return 400', async () => {
+      const user = await getUserByEmailService(userPayload.email)
+      userPayload.userId = user?._id
+      if (user?.passwordResetCode) {
+        userPayload.passwordResetCode = user.passwordResetCode
+      }
+      await supertest(app).post(`/api/user/resetPassword/${userPayload.userId}/askdljiow231`)
+        .send({
+          password: 'erwinxu13',
+          passwordConfirmation: 'erwinxu13'
+        })
+        .expect(400)
+    })
+  })
+  describe('Change password and success', () => {
+    it('Should return 200 and successMessage', async () => {
+      const user = await getUserByEmailService(userPayload.email)
+      userPayload.userId = user?._id
+      if (user?.passwordResetCode) {
+        userPayload.passwordResetCode = user.passwordResetCode
+      }
+      const {body, statusCode} = await supertest(app).post(`/api/user/resetPassword/${userPayload.userId}/${userPayload.passwordResetCode}`)
+        .send({
+          password: 'erwinxu13',
+          passwordConfirmation: 'erwinxu13'
+        })
+
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        successMessage: 'Your password has been changed'
       })
     })
   })

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
 import { MyError } from '../middlewares/errorHandler';
 
-import { createUserService, getUserByIdService, getUsersService, updateUserProfileService, verifyUserService } from '../services/userService';
-import { CreateUserInput, UpdateUserInput, VerificationUserParams } from '../schemas/userSchema';
+import { changePasswordService, createUserService, getUserByEmailService, getUserByIdService, getUsersService, setPasswordCodeService, updateUserProfileService, verifyUserService } from '../services/userService';
+import { ChangePasswordInput, CreateUserInput, RequestChangePassword, UpdateUserInput, VerificationUserParams } from '../schemas/userSchema';
 import sendMail from '../utils/mailer';
 
 export const getUserHandler = async (req: Request, res: Response, next: NextFunction) => {
@@ -93,6 +93,45 @@ export const updateUserProfileHandler = async (req: Request<{}, {}, UpdateUserIn
     })
   } catch (error: any) {
     if (error.code === 11000) next(new MyError('Email is already been used', 400))
+    next(new MyError(error.message, error.code))
+  }
+}
+
+export const requestChangePasswordHandler = async (req: Request<{}, {}, RequestChangePassword>, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body
+    const user = await getUserByEmailService(email)
+    if (!user || !user?.verified) throw new MyError('Email is not registered as account', 400)
+    const updateUser = await setPasswordCodeService(user, true)
+
+    await sendMail({
+      from: 'test@gmail.com',
+      to: updateUser.email,
+      subject: 'Verified your email',
+      text: `Id = ${user._id}, reset password code = ${updateUser.passwordResetCode}`
+    })
+
+    return res.send({
+      successMessage: 'A verification email has been sent'
+    })
+
+  } catch (error: any) {
+    next(new MyError(error.message, error.code))
+  }
+}
+
+export const changePasswordHandler = async (req: Request<ChangePasswordInput['params'], {}, ChangePasswordInput['body']>, res: Response, next: NextFunction) => {
+  try {
+    const { userId, passwordResetCode } = req.params
+    const { password } = req.body
+    const user = await getUserByIdService(userId)
+    if (!user || !user?.verified) throw new MyError('Email is not registered as account', 400)
+    await changePasswordService(user, passwordResetCode, password)
+
+    res.send({
+      successMessage: 'Your password has been changed'
+    })
+  } catch (error: any) {
     next(new MyError(error.message, error.code))
   }
 }

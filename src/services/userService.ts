@@ -1,7 +1,9 @@
 import { DocumentType } from '@typegoose/typegoose'
+import { nanoid } from 'nanoid'
 import { MyError } from '../middlewares/errorHandler'
 import UserModel, { User } from '../models/UserModel'
 import { UpdateUserInput } from '../schemas/userSchema'
+import argon2 from 'argon2'
 
 export const createUserService = async (input: Partial<User>) => {
   return await UserModel.create(input)
@@ -47,4 +49,20 @@ export const updateUserProfileService = async (user: DocumentType<User>, updateD
   await user.save()
 
   return user
+}
+
+export const setPasswordCodeService = async (user: DocumentType<User>, clearResetPasswordCode = false) => {
+  clearResetPasswordCode ? user.passwordResetCode = nanoid() : user.passwordResetCode = ''
+
+  await user.save()
+  return user
+}
+
+export const changePasswordService = async (user: DocumentType<User> , passwordResetCode: string, password: string) => {
+  if (!user.verified) throw new MyError('Email is not registered as account', 400)
+  if (user.passwordResetCode !== passwordResetCode) throw new MyError('Email is not registered as account', 400)
+  const hashedPassword = await argon2.hash(password)
+  user.password = hashedPassword
+  user.passwordResetCode = null
+  await user.save()
 }
