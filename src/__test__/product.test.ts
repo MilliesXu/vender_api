@@ -22,7 +22,14 @@ const productPayload = {
   description: 'This is product one'
 }
 
+const productUpdatePayload = {
+  name: 'Product Update One',
+  description: 'This is a update product one'
+}
+
 let token: string
+const productId = new mongoose.Types.ObjectId().toString()
+let id: string
 
 describe('Product', () => {
   beforeAll(async () => {
@@ -59,6 +66,7 @@ describe('Product', () => {
         .set('Cookie', `accessToken=${token}`)
         .send(productPayload)
 
+      id = body.productInfo._id
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         productInfo: {
@@ -70,6 +78,138 @@ describe('Product', () => {
           }
         },
         successMessage: 'Successfully create a product'
+      })
+    })
+  })
+  describe('Get product but not login', () => {
+    it('Should return 401', async () => {
+      await supertest(app).get(`/api/product/${productId}`).expect(401)
+    })
+  })
+  describe('Get product but id not found', () => {
+    it('Should return 404', async () => {
+      await supertest(app).get(`/api/product/${productId}`)
+        .set('Cookie', `accessToken=${token}`)
+        .expect(404)
+    })
+  })
+  describe('Get product and success', () => {
+    it('Should return 200', async () => {
+      const { body, statusCode } = await supertest(app).get(`/api/product/${id}`)
+        .set('Cookie', `accessToken=${token}`)
+
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        productInfo: {
+          _id: id,
+          name: productPayload.name,
+          description: productPayload.description,
+          user: {
+            firstname: userPayload.firstname,
+            lastname: userPayload.lastname
+          }
+        }
+      })
+    })
+  })
+  describe('Get product but not login', () => {
+    it('Should return 401', async () => {
+      await supertest(app).get(`/api/product/${id}`)
+        .expect(401)
+    })
+  })
+  describe('Get all product and success', () => {
+    it('Should return 200', async () => {
+      const { body, statusCode } = await supertest(app).get(`/api/product/`)
+        .set('Cookie', `accessToken=${token}`)
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        products: 
+          [{
+              _id: id,
+              name: productPayload.name,
+              description: productPayload.description,
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+          }]
+      })
+    })
+  })
+  describe('Update product but not login', () => {
+    it('Should return 401', async () => {
+      await supertest(app).put(`/api/product/${productId}`)
+        .expect(401)
+    })
+  })
+  describe('Update product but no data send', () => {
+    it('Should return 400', async () => {
+      await supertest(app).put(`/api/product/${productId}`)
+        .set('Cookie', `accessToken=${token}`)
+        .expect(400)
+    })
+  })
+  describe('Update product but product not found', () => {
+    it('Should return 404', async () => {
+      await supertest(app).put(`/api/product/${productId}`)
+        .set('Cookie', `accessToken=${token}`)
+        .send(productUpdatePayload)
+        .expect(404)
+    })
+  })
+  describe('Update product and success', () => {
+    it('Should return 200, productInfo, and successMessage', async () => {
+      const { body, statusCode } = await supertest(app).put(`/api/product/${id}`)
+        .set('Cookie', `accessToken=${token}`)
+        .send(productUpdatePayload)
+      
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        productInfo: {
+            _id: id,
+            name: productUpdatePayload.name,
+            description: productUpdatePayload.description,
+            user: {
+              firstname: userPayload.firstname,
+              lastname: userPayload.lastname
+            }
+        },
+        successMessage: 'Successfully update product'
+      })
+    })
+  })
+  describe('Delete product but not login', () => {
+    it('Should return 401', async () => {
+      await supertest(app).delete(`/api/product/${productId}`)
+        .expect(401)
+    })
+  })
+  describe('Delete product but product not found', () => {
+    it('Should return 404', async () => {
+      await supertest(app).delete(`/api/product/${productId}`)
+        .set('Cookie', `accessToken=${token}`)
+        .expect(404)
+    })
+  })
+  describe('Delete product and success', () => {
+    it('Should return 200, successMessage', async () => {
+      const { body, statusCode } = await supertest(app).delete(`/api/product/${id}`)
+        .set('Cookie', `accessToken=${token}`)
+      
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        successMessage: 'Successfully delete product'
+      })
+    })
+  })
+  describe('Get all product and success', () => {
+    it('Should return 200, and empty array', async () => {
+      const { body, statusCode } = await supertest(app).get(`/api/product/`)
+        .set('Cookie', `accessToken=${token}`)
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        products: []
       })
     })
   })
