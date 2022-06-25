@@ -112,9 +112,9 @@ describe('Product', () => {
       })
     })
   })
-  describe('Get product but not login', () => {
+  describe('Get products but not login', () => {
     it('Should return 401', async () => {
-      await supertest(app).get(`/api/product/${id}`)
+      await supertest(app).get(`/api/product/`)
         .expect(401)
     })
   })
