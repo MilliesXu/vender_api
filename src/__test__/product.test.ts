@@ -72,6 +72,7 @@ describe('Product', () => {
         productInfo: {
           name: productPayload.name,
           description: productPayload.description,
+          lines: [],
           user: {
             firstname: userPayload.firstname,
             lastname: userPayload.lastname

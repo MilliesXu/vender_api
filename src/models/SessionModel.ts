@@ -1,18 +1,19 @@
-import { getModelForClass, prop, modelOptions, Ref } from '@typegoose/typegoose'
-import { User } from './UserModel'
+import  mongoose, { Schema, Document } from 'mongoose'
 
-@modelOptions({
-  schemaOptions: {
-    timestamps: true
-  }
-})
-export class Session {
-  @prop({ ref: () => User })
-    user: Ref<User>
-
-  @prop({ type: Boolean, default: true })
-    valid: boolean
+export interface iSession extends Document {
+  user: Schema.Types.ObjectId,
+  valid: boolean
 }
 
-const SessionModel = getModelForClass(Session)
+const sessionSchema = new Schema<iSession>({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  valid: {type: Boolean, default: true}
+}, {
+  timestamps: true
+})
+
+const SessionModel = mongoose.model<iSession>('Session', sessionSchema)
 export default SessionModel

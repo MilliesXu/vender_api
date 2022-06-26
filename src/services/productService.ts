@@ -1,7 +1,5 @@
-import { DocumentType } from '@typegoose/typegoose'
-
 import { MyError } from "../middlewares/errorHandler";
-import ProductModel, { Product } from "../models/ProductModel";
+import ProductModel, { iProduct } from "../models/ProductModel";
 import { CreateProductInput, UpdateProduct } from '../schemas/productSchema';
 
 export const createProductService = async (data: CreateProductInput, userId: string) => {
@@ -10,7 +8,10 @@ export const createProductService = async (data: CreateProductInput, userId: str
     user: userId
   })
 
-  return product.populate('user', { firstname: 1, lastname: 1, _id: 0 })
+  await product.populate('lines')
+  await product.populate('user', { firstname: 1, lastname: 1, _id: 0 })
+
+  return product
 }
 
 export const findOneProductService = async (productId: string) => {
@@ -22,11 +23,12 @@ export const findOneProductService = async (productId: string) => {
 
 export const findAllProductService = async () => {
   const products = await ProductModel.find().populate('user', { firstname: 1, lastname: 1, _id: 0 })
+  await ProductModel.updateOne()
   
   return products
 }
 
-export const updateProductService = async (product: DocumentType<Product>, data: UpdateProduct['body']) => {
+export const updateProductService = async (product: iProduct, data: UpdateProduct['body']) => {
   product.name = data.name
   product.description = data.description
   await product.save()
@@ -34,6 +36,6 @@ export const updateProductService = async (product: DocumentType<Product>, data:
   return product
 }
 
-export const deleteProductService = async (product: DocumentType<Product>) => {
+export const deleteProductService = async (product: iProduct) => {
   return await product.delete()
 }

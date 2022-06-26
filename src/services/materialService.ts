@@ -1,6 +1,4 @@
-import { DocumentType } from '@typegoose/typegoose'
-
-import MaterialModel, { Material } from '../models/MaterialModel'
+import MaterialModel, { iMaterial } from '../models/MaterialModel'
 import { CreateMaterialInput, UpdateMaterial } from '../schemas/materialSchema'
 import { MyError } from '../middlewares/errorHandler'
 
@@ -26,7 +24,7 @@ export const findAllMaterialService = async () => {
   return materials
 }
 
-export const updateMaterialService = async (material: DocumentType<Material>, data: UpdateMaterial['body']) => {
+export const updateMaterialService = async (material: iMaterial, data: UpdateMaterial['body']) => {
   material.name = data.name
   material.description = data.description
   material.unit_price = data.unit_price
@@ -36,7 +34,7 @@ export const updateMaterialService = async (material: DocumentType<Material>, da
   return material
 }
 
-export const deleteMaterialService = async (material: DocumentType<Material>) => {
+export const deleteMaterialService = async (material: iMaterial) => {
   return await material.delete()
 }
 

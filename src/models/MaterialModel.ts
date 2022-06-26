@@ -1,23 +1,25 @@
-import { getModelForClass, prop, Ref, modelOptions } from '@typegoose/typegoose'
-import { User } from './UserModel'
+import  mongoose, { Schema, Document } from 'mongoose'
 
-@modelOptions({
-  schemaOptions: {
-    timestamps: true
-  }
-})
-export class Material {
-  @prop({ type: String, required: true })
-    name: string
-  @prop({ type: String })
-    description: string
-  @prop({ type: String, required: true })
-    uom: string
-  @prop({ type: Number, required: true, default: 0.00 })
-    unit_price: number
-  @prop({ ref: () => User })
-    user: Ref<User>
+export interface iMaterial extends Document {
+  name: string,
+  description: string,
+  uom: string,
+  unit_price: number,
+  user: Schema.Types.ObjectId
 }
 
-const MaterialModel = getModelForClass(Material)
+const materialSchema = new Schema<iMaterial>({
+  name: {type: String, required: true},
+  description: {type: String},
+  uom: {type: String, required: true},
+  unit_price: {type: Number, required: true, default: 0.00},
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }
+}, {
+  timestamps: true
+})
+
+const MaterialModel = mongoose.model<iMaterial>('Material', materialSchema)
 export default MaterialModel
