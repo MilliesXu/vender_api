@@ -17,7 +17,7 @@ const userPayload = {
   password: 'erwinxu13',
   passwordConfirmation: 'erwinxu13',
   passwordResetCode: '',
-  userId: null
+  userId: ''
 }
 
 const userId = new mongoose.Types.ObjectId().toString()
@@ -69,7 +69,7 @@ describe('User', () => {
       await supertest(app).post('/api/user/')
         .send(userPayload)
         .expect(400)
-      await deleteUserService(user._id)
+      await deleteUserService(user._id.toString())
     })
   })
   describe('Create user and success', () => {
@@ -96,7 +96,7 @@ describe('User', () => {
   describe('Verified user and success', () => {
     it('Should return 200, body, and successMessage', async () => {
       const user = await getUserByEmailService(userPayload.email)
-      id = user?._id
+      if (user) id = user._id.toString()
       const { body, statusCode } = await supertest(app).get(`/api/user/${user?._id}/${user?.verificationCode}`)
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
@@ -267,7 +267,8 @@ describe('User', () => {
   describe('Change password but password reset code is wrong', () => {
     it('Should return 400', async () => {
       const user = await getUserByEmailService(userPayload.email)
-      userPayload.userId = user?._id
+      if (user) userPayload.userId = user._id.toString()
+
       if (user?.passwordResetCode) {
         userPayload.passwordResetCode = user.passwordResetCode
       }
@@ -282,7 +283,9 @@ describe('User', () => {
   describe('Change password and success', () => {
     it('Should return 200 and successMessage', async () => {
       const user = await getUserByEmailService(userPayload.email)
-      userPayload.userId = user?._id
+
+      if (user) userPayload.userId = user?._id.toString()
+
       if (user?.passwordResetCode) {
         userPayload.passwordResetCode = user.passwordResetCode
       }

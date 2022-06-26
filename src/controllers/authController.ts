@@ -12,7 +12,7 @@ export const loginHandler = async (req: Request<{}, {}, LoginInput>, res: Respon
     const user = await getUserByEmailService(email)
     if (!user) throw new MyError('Invalid email address or password', 401)
     await validatePassword(user, password)
-    const session = await createSessionService(user._id)
+    const session = await createSessionService(user._id.toString())
     const accessToken = signInJWT({ userId: user._id, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
     const refreshToken = signInJWT({ userId: user._id, sessionId: session._id }, 'REFRESH_TOKEN_PRIVATE')
 
