@@ -1,5 +1,5 @@
 import { MyError } from "../middlewares/errorHandler";
-import ProductModel, { iProduct } from "../models/ProductModel";
+import ProductModel, { ProductDocument } from "../models/ProductModel";
 import { CreateProductInput, UpdateProduct } from '../schemas/productSchema';
 
 export const createProductService = async (data: CreateProductInput, userId: string) => {
@@ -28,7 +28,7 @@ export const findAllProductService = async () => {
   return products
 }
 
-export const updateProductService = async (product: iProduct, data: UpdateProduct['body']) => {
+export const updateProductService = async (product: ProductDocument, data: UpdateProduct['body']) => {
   product.name = data.name
   product.description = data.description
   await product.save()
@@ -36,6 +36,6 @@ export const updateProductService = async (product: iProduct, data: UpdateProduc
   return product
 }
 
-export const deleteProductService = async (product: iProduct) => {
+export const deleteProductService = async (product: ProductDocument) => {
   return await product.delete()
 }

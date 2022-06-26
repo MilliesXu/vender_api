@@ -1,13 +1,13 @@
 import  mongoose, { Schema, Document } from 'mongoose'
 
-export interface iProduct extends Document {
+interface iProduct {
   name: string,
   description: string,
   lines: Schema.Types.DocumentArray<iProductMaterialLine>,
   user: Schema.Types.ObjectId
 }
 
-export interface iProductMaterialLine extends Document {
+interface iProductMaterialLine {
   product: Schema.Types.ObjectId,
   material: Schema.Types.ObjectId,
   quantity: number,
@@ -48,5 +48,7 @@ const productMaterialLineSchema = new Schema<iProductMaterialLine>({
 })
 
 const ProductModel = mongoose.model<iProduct>('Product', productSchema)
+export type ProductDocument = iProduct & Document
+export type ProdudctMaterialDocument = iProductMaterialLine & Document
 export const ProductMaterialLineModel = mongoose.model<iProductMaterialLine>('ProductMaterialLine', productMaterialLineSchema)
 export default ProductModel
