@@ -1,6 +1,6 @@
-import  mongoose, { Schema, Document } from 'mongoose'
+import  mongoose, { Schema } from 'mongoose'
 
-export interface iSession extends Document {
+interface iSession {
   user: Schema.Types.ObjectId,
   valid: boolean
 }

@@ -63,7 +63,7 @@ describe('Auth', () => {
       if (user) {
         user.verified = true
         await user.save()
-        userId = user._id
+        userId = user._id.toString()
       }
       await supertest(app).post('/api/auth/login')
       .send({
@@ -98,7 +98,7 @@ describe('Auth', () => {
       .expect(401)
     })
   })
-  describe('Logout andd success', () => {
+  describe('Logout and success', () => {
     it('Should return 200, and successMessage', async () => {
       const session = await findSessionByUserService(userId)
       const accessToken = signInJWT({ userId, session: session._id }, 'ACCESS_TOKEN_PRIVATE')
