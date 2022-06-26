@@ -6,6 +6,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server'
 import { createServer } from '../utils/server'
 import { signInJWT } from '../utils/jwt'
 import { createUserService } from '../services/userService'
+import { createMaterialService } from '../services/materialService'
 
 const app = createServer()
 
@@ -27,9 +28,17 @@ const productUpdatePayload = {
   description: 'This is a update product one'
 }
 
+const materialPayload = {
+  name: 'Material One',
+  description: 'This is material one',
+  uom: 'meter',
+  unit_price: 120000
+}
+
 let token: string
 const productId = new mongoose.Types.ObjectId().toString()
 let id: string
+let materialId: string
 
 describe('Product', () => {
   beforeAll(async () => {
@@ -38,10 +47,12 @@ describe('Product', () => {
     await mongoose.connect(mongoServer.getUri())
 
     const user = await createUserService(userPayload)
+    const material = await createMaterialService(materialPayload, user._id.toString())
     user.verified = true
     await user.save()
 
     token = signInJWT({ userId: user._id }, 'ACCESS_TOKEN_PRIVATE')
+    materialId = material._id.toString()
   })
   afterAll(async () => {
     await mongoose.disconnect()
@@ -60,19 +71,36 @@ describe('Product', () => {
         .expect(400)
     })
   })
-  describe('Create product and success', () => {
+  describe('Create product with material lines and success', () => {
     it('Should return 200, productData, and successMessage', async () => {
       const { body, statusCode } = await supertest(app).post('/api/product')
         .set('Cookie', `accessToken=${token}`)
-        .send(productPayload)
-
+        .send({
+          ...productPayload,
+          lines: [{
+            materialId,
+            quantity: 1.2
+          }]
+        })
+      
       id = body.productInfo._id
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         productInfo: {
           name: productPayload.name,
           description: productPayload.description,
-          lines: [],
+          lines: [{
+            material: {
+              _id: materialId,
+              name: materialPayload.name,
+              unit_price: materialPayload.unit_price,
+            },
+            quantity: 1.2,
+            user: {
+              firstname: userPayload.firstname,
+              lastname: userPayload.lastname
+            }
+          }],
           user: {
             firstname: userPayload.firstname,
             lastname: userPayload.lastname
@@ -94,7 +122,7 @@ describe('Product', () => {
         .expect(404)
     })
   })
-  describe('Get product and success', () => {
+  describe('Get product with line and success', () => {
     it('Should return 200', async () => {
       const { body, statusCode } = await supertest(app).get(`/api/product/${id}`)
         .set('Cookie', `accessToken=${token}`)
@@ -105,6 +133,18 @@ describe('Product', () => {
           _id: id,
           name: productPayload.name,
           description: productPayload.description,
+          lines: [{
+            material: {
+              _id: materialId,
+              name: materialPayload.name,
+              unit_price: materialPayload.unit_price,
+            },
+            quantity: 1.2,
+            user: {
+              firstname: userPayload.firstname,
+              lastname: userPayload.lastname
+            }
+          }],
           user: {
             firstname: userPayload.firstname,
             lastname: userPayload.lastname
@@ -130,6 +170,18 @@ describe('Product', () => {
               _id: id,
               name: productPayload.name,
               description: productPayload.description,
+              lines: [{
+                material: {
+                  _id: materialId,
+                  name: materialPayload.name,
+                  unit_price: materialPayload.unit_price,
+                },
+                quantity: 1.2,
+                user: {
+                  firstname: userPayload.firstname,
+                  lastname: userPayload.lastname
+                }
+              }],
               user: {
                 firstname: userPayload.firstname,
                 lastname: userPayload.lastname

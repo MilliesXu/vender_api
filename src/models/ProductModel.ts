@@ -1,14 +1,13 @@
-import  mongoose, { Schema, Document } from 'mongoose'
+import  mongoose, { Schema, Types, Document } from 'mongoose'
 
 interface iProduct {
   name: string,
   description: string,
-  lines: Schema.Types.DocumentArray<iProductMaterialLine>,
-  user: Schema.Types.ObjectId
+  lines: [Types.ObjectId],
+  user: Types.ObjectId
 }
 
 interface iProductMaterialLine {
-  product: Schema.Types.ObjectId,
   material: Schema.Types.ObjectId,
   quantity: number,
   user: Schema.Types.ObjectId
@@ -30,10 +29,6 @@ const productSchema = new Schema<iProduct>({
 })
 
 const productMaterialLineSchema = new Schema<iProductMaterialLine>({
-  product: {
-    type: Schema.Types.ObjectId,
-    ref: 'Product'
-  },
   material: {
     type: Schema.Types.ObjectId,
     ref: 'Material'

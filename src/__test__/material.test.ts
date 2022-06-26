@@ -23,6 +23,7 @@ const materialPayload = {
   uom: 'meter',
   unit_price: 120000
 }
+
 const materialUpdatePayload = {
   name: 'Material One Update',
   description: 'This is material one updated',
