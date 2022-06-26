@@ -1,6 +1,6 @@
 import  mongoose, { Schema, Document } from 'mongoose'
 
-export interface iMaterial extends Document {
+interface iMaterial {
   name: string,
   description: string,
   uom: string,
@@ -22,4 +22,5 @@ const materialSchema = new Schema<iMaterial>({
 })
 
 const MaterialModel = mongoose.model<iMaterial>('Material', materialSchema)
+export type MaterialDocument = iMaterial & Document
 export default MaterialModel

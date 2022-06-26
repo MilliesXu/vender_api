@@ -1,4 +1,4 @@
-import MaterialModel, { iMaterial } from '../models/MaterialModel'
+import MaterialModel, { MaterialDocument } from '../models/MaterialModel'
 import { CreateMaterialInput, UpdateMaterial } from '../schemas/materialSchema'
 import { MyError } from '../middlewares/errorHandler'
 
@@ -24,7 +24,7 @@ export const findAllMaterialService = async () => {
   return materials
 }
 
-export const updateMaterialService = async (material: iMaterial, data: UpdateMaterial['body']) => {
+export const updateMaterialService = async (material: MaterialDocument, data: UpdateMaterial['body']) => {
   material.name = data.name
   material.description = data.description
   material.unit_price = data.unit_price
@@ -34,7 +34,7 @@ export const updateMaterialService = async (material: iMaterial, data: UpdateMat
   return material
 }
 
-export const deleteMaterialService = async (material: iMaterial) => {
+export const deleteMaterialService = async (material: MaterialDocument) => {
   return await material.delete()
 }
 
