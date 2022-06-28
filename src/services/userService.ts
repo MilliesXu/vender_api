@@ -1,67 +1,139 @@
 import { nanoid } from 'nanoid'
 import { MyError } from '../middlewares/errorHandler'
-import UserModel, { iUserMethods, UserDocument, iUser } from '../models/UserModel'
-import { UpdateUserInput } from '../schemas/userSchema'
+import { CreateUserInput, UpdateUserInput } from '../schemas/userSchema'
 import argon2 from 'argon2'
+import prisma from '../utils/prisma'
 
-export const createUserService = async (input: Partial<iUser>) => {
-  return await UserModel.create(input)
-}
+export const createUserService = async (input: CreateUserInput) => {
+  const user = await prisma.user.create({
+    data: {
+      firstname: input.firstname,
+      lastname: input.lastname,
+      email: input.email,
+      password: await argon2.hash(input.password),
+      verificationCode: nanoid()
+    }
+  })
 
-export const getUsersService = async () => {
-  return await UserModel.find()
-}
-
-export const getUserByEmailService = async (email: string) => {
-  return await UserModel.findOne({ email })
-}
-
-export const getUserByIdService = async (id: string) => {
-  return await UserModel.findById(id)
-}
-
-export const deleteUserService = async (id: string) => {
-  return await UserModel.deleteOne({ id })
-}
-
-export const verifyUserService = async (user: UserDocument, verificationCode: string) => {
-  if (user.verificationCode !== verificationCode) throw new MyError('Failed to verified account', 400)
-
-  user.verified = true
-  await user.save()
   return user
 }
 
-export const validatePassword = async (user: iUserMethods, password: string) => {
-  if (!user.verified) throw new MyError('User is not verified', 403)
+export const getUsersService = async () => {
+  return await prisma.user.findMany()
+}
 
-  const isValid = await user.validatePassword(user, password)
+export const getUserByEmailService = async (email: string) => {
+  return await prisma.user.findUnique({ 
+    where: {
+      email
+    }
+   })
+}
+
+export const getUserByEmailValidation = async (email: string) => {
+  const user = await getUserByEmailService(email)
+
+  if (!user) throw new MyError('Email is not registered as account', 400)
+
+  return user
+}
+
+export const getUserByIdService = async (id: number) => {
+  return await prisma.user.findUnique({ 
+    where: {
+      id
+    }
+   })
+}
+
+export const getUserByIdValidation = async (id: number) => {
+  const user = await getUserByIdService(id)
+
+  if (!user) throw new MyError('Not Authorized', 401)
+
+  return user
+}
+
+export const deleteUserService = async (id: number) => {
+  return await prisma.user.delete({
+    where: {
+      id
+    }
+  })
+}
+
+export const verifyUserService = async (id: number, verificationCode: string) => {
+  const user = await getUserByIdService(id)
+  if (!user || user.verificationCode !== verificationCode) throw new MyError('Failed to verified account', 400)
+
+  const updateUser = await prisma.user.update({
+    where: {
+      id
+    },
+    data: {
+      verified: true
+    }
+  })
+
+  return updateUser
+}
+
+export const validatePassword = async (id: number, password: string) => {
+  const user = await getUserByIdService(id)
+  if (!user || !user.verified) throw new MyError('User is not verifed', 403)
+
+  const isValid = await argon2.verify(user.password, password)
 
   if (!isValid) throw new MyError('Invalid email or password', 401)
 }
 
-export const updateUserProfileService = async (user: UserDocument, updateData: UpdateUserInput) => {
-  user.firstname = updateData.firstname
-  user.lastname = updateData.lastname
-  user.email = updateData.email
-
-  await user.save()
+export const updateUserProfileService = async (id: number, data: UpdateUserInput) => {
+  const user = prisma.user.update({
+    where: {
+      id
+    },
+    data: {
+      firstname: data.firstname,
+      lastname: data.lastname,
+      email: data.email
+    }
+  })
 
   return user
 }
 
-export const setPasswordCodeService = async (user: UserDocument, clearResetPasswordCode = false) => {
-  clearResetPasswordCode ? user.passwordResetCode = nanoid() : user.passwordResetCode = ''
+export const setPasswordCodeService = async (email: string) => {
+  const user = await getUserByEmailService(email)
+  if (!user || !user.verified) throw new MyError('Email is not registered', 403)
+  const passwordResetCode = nanoid()
 
-  await user.save()
-  return user
+  const updateUser = await prisma.user.update({
+    where: {
+      email
+    },
+    data: {
+      passwordResetCode
+    }
+  })
+
+  return updateUser
 }
 
-export const changePasswordService = async (user: UserDocument, passwordResetCode: string, password: string) => {
-  if (!user.verified) throw new MyError('Email is not registered as account', 400)
-  if (user.passwordResetCode !== passwordResetCode) throw new MyError('Email is not registered as account', 400)
+export const changePasswordService = async (id: number, passwordResetCode: string, password: string) => {
+  const user = await getUserByIdService(id)
+  if (!user || !user.verified || user.passwordResetCode !== passwordResetCode) throw new MyError('Failed to change password', 400)
+
   const hashedPassword = await argon2.hash(password)
-  user.password = hashedPassword
-  user.passwordResetCode = null
-  await user.save()
+
+  const updateUser = await prisma.user.update({
+    where: {
+      id
+    },
+    data: {
+      password: hashedPassword,
+      passwordResetCode: ''
+    }
+  })
+
+  return updateUser
 }

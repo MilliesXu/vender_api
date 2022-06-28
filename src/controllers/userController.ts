@@ -16,7 +16,7 @@ export const getUserHandler = async (req: Request, res: Response, next: NextFunc
 
 export const getUserProfileHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const userId = res.locals.user.userId
+    const userId: number = res.locals.user.userId
 
     const user = await getUserByIdService(userId)
     if (!user) throw new MyError('Not authorized', 401)
@@ -40,7 +40,7 @@ export const createUserHandler = async (req: Request<{}, {}, CreateUserInput>, r
       from: 'test@gmail.com',
       to: user.email,
       subject: 'Verified your email',
-      text: `Id = ${user._id}, verification code = ${user.verificationCode}`
+      text: `Id = ${user.id}, verification code = ${user.verificationCode}`
     })
 
     return res.send({
@@ -53,10 +53,12 @@ export const createUserHandler = async (req: Request<{}, {}, CreateUserInput>, r
 
 export const verificationUserHandler = async (req: Request<VerificationUserParams>, res: Response, next: NextFunction) => {
   try {
-    const { id, verificationCode } = req.params
-    const user = await getUserByIdService(id)
-    if (!user) throw new MyError('Not authorized', 401)
-    const verifieduser = await verifyUserService(user, verificationCode)
+    const { userId, verificationCode } = req.params
+    const id = parseInt(userId)
+
+    if (id === NaN) throw new MyError('Failed to verified account', 400)
+
+    const verifieduser = await verifyUserService(id, verificationCode)
     res.statusMessage = 'Successfully verified your account'
     res.send({
       userInfo: {
@@ -74,14 +76,8 @@ export const verificationUserHandler = async (req: Request<VerificationUserParam
 export const updateUserProfileHandler = async (req: Request<{}, {}, UpdateUserInput>, res: Response, next: NextFunction) => {
   try {
     const body = req.body
-    const user = await getUserByIdService(res.locals.user.userId)
-    if (user) {
-      if (user.verified) {
-        await updateUserProfileService(user, body)
-      } else {
-        throw new MyError('Cannot update user that is not verified', 403)
-      }
-    }
+    const userId: number = res.locals.user.userId
+    const user = await updateUserProfileService(userId, body)
 
     res.send({
       userInfo: {
@@ -100,15 +96,13 @@ export const updateUserProfileHandler = async (req: Request<{}, {}, UpdateUserIn
 export const requestChangePasswordHandler = async (req: Request<{}, {}, RequestChangePassword>, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body
-    const user = await getUserByEmailService(email)
-    if (!user || !user?.verified) throw new MyError('Email is not registered as account', 400)
-    const updateUser = await setPasswordCodeService(user, true)
+    const user = await setPasswordCodeService(email)
 
     await sendMail({
       from: 'test@gmail.com',
-      to: updateUser.email,
+      to: user.email,
       subject: 'Verified your email',
-      text: `Id = ${user._id}, reset password code = ${updateUser.passwordResetCode}`
+      text: `Id = ${user.id}, reset password code = ${user.passwordResetCode}`
     })
 
     return res.send({
@@ -124,9 +118,7 @@ export const changePasswordHandler = async (req: Request<ChangePasswordInput['pa
   try {
     const { userId, passwordResetCode } = req.params
     const { password } = req.body
-    const user = await getUserByIdService(userId)
-    if (!user || !user?.verified) throw new MyError('Email is not registered as account', 400)
-    await changePasswordService(user, passwordResetCode, password)
+    await changePasswordService(parseInt(userId), passwordResetCode, password)
 
     res.send({
       successMessage: 'Your password has been changed'

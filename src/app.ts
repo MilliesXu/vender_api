@@ -1,6 +1,5 @@
 import 'dotenv/config'
 
-import { connectDB } from "./utils/connect";
 import { createServer } from "./utils/server";
 import { log } from './utils/logger';
 
@@ -11,5 +10,4 @@ const app = createServer()
 
 app.listen(PORT, () => {
   log.info(`Server start on port ${PORT}`)
-  connectDB()
 })

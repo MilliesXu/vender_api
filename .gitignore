@@ -1,3 +1,6 @@
 node_modules
 database.db
+test.db
+.env.test
 .env
+test.db-journal

@@ -89,3 +89,7 @@ export const createProductMaterialLineService = async (data: CreateProductMateri
     user: userId
   })
 }
+
+export const updateProductMaterialLineService = async () => {
+  
+}

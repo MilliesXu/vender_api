@@ -9,7 +9,7 @@ const userRoute = express.Router()
 
 userRoute.get('/', deserializeUser, getUserProfileHandler)
 userRoute.post('/', validateRequest(createUserSchema), createUserHandler)
-userRoute.get('/:id/:verificationCode', verificationUserHandler)
+userRoute.get('/:userId/:verificationCode', verificationUserHandler)
 userRoute.put('/', deserializeUser, validateRequest(updateUserSchema), updateUserProfileHandler)
 userRoute.get('/requestResetPassword', validateRequest(requestChangePasswordSchema), requestChangePasswordHandler)
 userRoute.post('/resetPassword/:userId/:passwordResetCode', validateRequest(changePasswordSchema), changePasswordHandler)

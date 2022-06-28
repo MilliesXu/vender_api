@@ -3,18 +3,17 @@ import { Request, Response, NextFunction } from 'express'
 import { MyError } from '../middlewares/errorHandler';
 import { LoginInput } from '../schemas/authSchema';
 import { createSessionService, deleteSessionService, findSessionByIdService } from '../services/authService';
-import { getUserByEmailService, validatePassword } from '../services/userService'
+import { getUserByEmailValidation, validatePassword } from '../services/userService'
 import { signInJWT, verifyJWT } from '../utils/jwt';
 
 export const loginHandler = async (req: Request<{}, {}, LoginInput>, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body
-    const user = await getUserByEmailService(email)
-    if (!user) throw new MyError('Invalid email address or password', 401)
-    await validatePassword(user, password)
-    const session = await createSessionService(user._id.toString())
-    const accessToken = signInJWT({ userId: user._id, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
-    const refreshToken = signInJWT({ userId: user._id, sessionId: session._id }, 'REFRESH_TOKEN_PRIVATE')
+    const user = await getUserByEmailValidation(email)
+    await validatePassword(user.id, password)
+    const session = await createSessionService(user.id.toString())
+    const accessToken = signInJWT({ userId: user.id, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
+    const refreshToken = signInJWT({ userId: user.id, sessionId: session._id }, 'REFRESH_TOKEN_PRIVATE')
 
     res.cookie('accessToken', accessToken, {
       secure: false,

@@ -1,5 +1,5 @@
 
-import { object, string, TypeOf, ZodIssueCode } from 'zod'
+import { number, object, string, TypeOf, ZodIssueCode } from 'zod'
 
 import { getUserByEmailService } from '../services/userService'
 
@@ -41,7 +41,7 @@ export const createUserSchema = object({
 
 export const verificationUserSchema = object({
   params: object({
-    id: string(),
+    userId: string(),
     verificationCode: string()
   })
 })
