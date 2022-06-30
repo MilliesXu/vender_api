@@ -88,7 +88,10 @@ export const validatePassword = async (id: number, password: string) => {
 }
 
 export const updateUserProfileService = async (id: number, data: UpdateUserInput) => {
-  const user = prisma.user.update({
+  const user = await getUserByIdService(id)
+  if (!user || !user.verified) throw new MyError('User is not valid', 403)
+
+  const updateUser = prisma.user.update({
     where: {
       id
     },
@@ -99,12 +102,12 @@ export const updateUserProfileService = async (id: number, data: UpdateUserInput
     }
   })
 
-  return user
+  return updateUser
 }
 
 export const setPasswordCodeService = async (email: string) => {
   const user = await getUserByEmailService(email)
-  if (!user || !user.verified) throw new MyError('Email is not registered', 403)
+  if (!user || !user.verified) throw new MyError('Email is not registered', 400)
   const passwordResetCode = nanoid()
 
   const updateUser = await prisma.user.update({

@@ -88,7 +88,7 @@ export const updateUserProfileHandler = async (req: Request<{}, {}, UpdateUserIn
       successMessage: 'Successfully update user profile'
     })
   } catch (error: any) {
-    if (error.code === 11000) next(new MyError('Email is already been used', 400))
+    if (error.code === 'P2002') next(new MyError('Email is already been used', 400))
     next(new MyError(error.message, error.code))
   }
 }
