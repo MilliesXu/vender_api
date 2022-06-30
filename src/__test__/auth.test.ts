@@ -4,7 +4,6 @@ import mongoose from 'mongoose'
 import { PrismaClient } from '@prisma/client'
 
 import { createServer } from '../utils/server'
-import { MongoMemoryServer } from 'mongodb-memory-server'
 import { createUserService, getUserByEmailService } from '../services/userService'
 import { createSessionService, findSessionByUserService } from '../services/authService'
 import { signInJWT } from '../utils/jwt'

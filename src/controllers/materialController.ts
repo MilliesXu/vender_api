@@ -22,7 +22,10 @@ export const createMaterialHandler = async (req: Request<{}, {}, CreateMaterialI
 export const findOneMaterialHandler = async (req: Request<FindOneMaterialParams>, res: Response, next: NextFunction) => {
   try {
     const { materialId } = req.params
-    const material = await findOneMaterialService(materialId)
+    const id = parseInt(materialId)
+
+    if (id === NaN) throw new MyError('Material not found', 404)
+    const material = await findOneMaterialService(id)
     
     res.send({
       materialInfo: material,
@@ -47,13 +50,16 @@ export const findMaterialsHandler = async (req: Request, res: Response, next: Ne
 export const updateMaterialHandler = async (req: Request<UpdateMaterial['params'], {}, UpdateMaterial['body']>, res: Response, next: NextFunction) => {
   try {
     const { materialId } = req.params
+    const id = parseInt(materialId)
+
+    if (id === NaN) throw new MyError('Material not found', 404)
     const body = req.body
 
-    const material = await findOneMaterialService(materialId)
-    const updateMaterial = await updateMaterialService(material, body)
+    await findOneMaterialService(id)
+    const material = await updateMaterialService(id, body)
 
     res.send({
-      materialInfo: updateMaterial,
+      materialInfo: material,
       successMessage: 'Successfully update material'
     })
 
@@ -65,9 +71,12 @@ export const updateMaterialHandler = async (req: Request<UpdateMaterial['params'
 export const deleteMaterialHandler = async (req: Request<FindOneMaterialParams>, res: Response, next: NextFunction) => {
   try {
     const { materialId } = req.params
+    const id = parseInt(materialId)
 
-    const material = await findOneMaterialService(materialId)
-    await deleteMaterialService(material)
+    if (id === NaN) throw new MyError('Material not found', 404)
+
+    await findOneMaterialService(id)
+    await deleteMaterialService(id)
 
     res.send({
       successMessage: 'Successfully delete material'

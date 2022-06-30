@@ -1,40 +1,92 @@
-import MaterialModel, { MaterialDocument } from '../models/MaterialModel'
 import { CreateMaterialInput, UpdateMaterial } from '../schemas/materialSchema'
 import { MyError } from '../middlewares/errorHandler'
+import prisma from '../utils/prisma'
 
-export const createMaterialService = async (data: CreateMaterialInput, userId: string) => {
-  const material = await MaterialModel.create({
-    ...data,
-    user: userId
+export const createMaterialService = async (data: CreateMaterialInput, userId: number) => {
+  return await prisma.material.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      uom: data.uom,
+      unit_price: data.unit_price,
+      user: {
+        connect: {
+          id: userId
+        }
+      }
+    },
+    include: {
+      user: {
+        select: {
+          firstname: true,
+          lastname: true
+        }
+      }
+    }
   })
-
-  return material.populate('user', { firstname: 1, lastname: 1, _id: 0 })
 }
 
-export const findOneMaterialService = async (materialId: string) => {
-  const material = await MaterialModel.findById(materialId).populate('user', { firstname: 1, lastname: 1, _id: 0 })
+export const findOneMaterialService = async (materialId: number) => {
+  const material = await prisma.material.findUnique({
+    where: {
+      id: materialId
+    },
+    include: {
+      user: {
+        select: {
+          firstname: true,
+          lastname: true
+        }
+      }
+    }
+  })
   if (!material) throw new MyError('Material not found', 404)
   
   return material
 }
 
 export const findAllMaterialService = async () => {
-  const materials = await MaterialModel.find().populate('user', { firstname: 1, lastname: 1, _id: 0 })
+  const materials = await prisma.material.findMany({
+    include: {
+      user: {
+        select: {
+          firstname: true,
+          lastname: true
+        }
+      }
+    }
+  })
   
   return materials
 }
 
-export const updateMaterialService = async (material: MaterialDocument, data: UpdateMaterial['body']) => {
-  material.name = data.name
-  material.description = data.description
-  material.unit_price = data.unit_price
-  material.uom = data.uom
-  await material.save()
-
-  return material
+export const updateMaterialService = async (materialId: number, data: UpdateMaterial['body']) => {
+  return await prisma.material.update({
+    where: {
+      id: materialId
+    },
+    data: {
+      name: data.name,
+      description: data.description,
+      uom: data.uom,
+      unit_price: data.unit_price
+    },
+    include: {
+      user: {
+        select: {
+          firstname: true,
+          lastname: true
+        }
+      }
+    }
+  })
 }
 
-export const deleteMaterialService = async (material: MaterialDocument) => {
-  return await material.delete()
+export const deleteMaterialService = async (materialId: number) => {
+  return await prisma.material.delete({
+    where: {
+      id: materialId
+    }
+  })
 }
 
