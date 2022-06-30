@@ -11,9 +11,9 @@ export const loginHandler = async (req: Request<{}, {}, LoginInput>, res: Respon
     const { email, password } = req.body
     const user = await getUserByEmailValidation(email)
     await validatePassword(user.id, password)
-    const session = await createSessionService(user.id.toString())
-    const accessToken = signInJWT({ userId: user.id, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
-    const refreshToken = signInJWT({ userId: user.id, sessionId: session._id }, 'REFRESH_TOKEN_PRIVATE')
+    const session = await createSessionService(user.id)
+    const accessToken = signInJWT({ userId: user.id, sessionId: session.id }, 'ACCESS_TOKEN_PRIVATE')
+    const refreshToken = signInJWT({ userId: user.id, sessionId: session.id }, 'REFRESH_TOKEN_PRIVATE')
 
     res.cookie('accessToken', accessToken, {
       secure: false,
@@ -39,6 +39,8 @@ export const loginHandler = async (req: Request<{}, {}, LoginInput>, res: Respon
 export const logoutHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sessionId = res.locals.user.sessionId
+    const id = parseInt(sessionId)
+    if (id === NaN) throw new MyError('Unauthorized', 401)
     await deleteSessionService(sessionId)
 
     res.clearCookie('accessToken')
@@ -57,9 +59,12 @@ export const refreshTokenHandler = async (req: Request, res: Response, next: Nex
     if (!refreshToken) throw new Error('Unauthorized refresh token')
     const decoded = verifyJWT<{ userId: string, sessionId: string }>(refreshToken, 'REFRESH_TOKEN_PUBLIC')
     if (!decoded) throw new Error('Unauthorized refresh token')
-    const session = await findSessionByIdService(decoded.sessionId)
+    const id = parseInt(decoded.sessionId)
 
-    const accessToken = signInJWT({ userId: decoded.userId, sessionId: session._id }, 'ACCESS_TOKEN_PRIVATE')
+    if (id === NaN) throw new Error('Failed to verified account')
+    const session = await findSessionByIdService(id)
+
+    const accessToken = signInJWT({ userId: decoded.userId, sessionId: session.id }, 'ACCESS_TOKEN_PRIVATE')
 
     res.cookie('accessToken', accessToken, {
       secure: false,

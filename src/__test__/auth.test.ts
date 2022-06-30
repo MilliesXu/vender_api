@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import supertest from 'supertest'
 import mongoose from 'mongoose'
+import { PrismaClient } from '@prisma/client'
 
 import { createServer } from '../utils/server'
 import { MongoMemoryServer } from 'mongodb-memory-server'
@@ -17,20 +18,20 @@ const userPayload = {
   password: 'erwinxu13',
   passwordConfirmation: 'erwinxu13'
 }
-let userId: string
+let userId: number
+let prismaGlobal: PrismaClient
 
 describe('Auth', () => {
   beforeAll(async () => {
-    const mongoServer = await MongoMemoryServer.create()
-
-    await mongoose.connect(mongoServer.getUri())
-
+    const prisma = new PrismaClient()
+    prismaGlobal = prisma
+    
     await createUserService(userPayload)
   })
   afterAll(async () => {
-    await mongoose.disconnect()
-
-    await mongoose.connection.close()
+    await prismaGlobal.session.deleteMany({})
+    await prismaGlobal.user.deleteMany({})
+    await prismaGlobal.$disconnect()
   })
   describe('Login but not sending data', () => {
     it('Should return 400', async () => {
@@ -54,16 +55,22 @@ describe('Auth', () => {
         email: userPayload.email,
         password: userPayload.password
       }) 
-      .expect(403)
+      .expect(401)
     })
   })
   describe('Login but wrong password', () => {
     it('Should return 400', async () => {
       const user = await getUserByEmailService(userPayload.email)
       if (user) {
-        user.verified = true
-        await user.save()
-        userId = user._id.toString()
+        await prismaGlobal.user.update({
+          where: {
+            id: user.id
+          },
+          data: {
+            verified: true
+          }
+        })
+        userId = user.id
       }
       await supertest(app).post('/api/auth/login')
       .send({
@@ -101,7 +108,7 @@ describe('Auth', () => {
   describe('Logout and success', () => {
     it('Should return 200, and successMessage', async () => {
       const session = await findSessionByUserService(userId)
-      const accessToken = signInJWT({ userId, session: session._id }, 'ACCESS_TOKEN_PRIVATE')
+      const accessToken = signInJWT({ userId, sessionId: session.id }, 'ACCESS_TOKEN_PRIVATE')
       const { body, statusCode } = await supertest(app).post('/api/auth/logout')
         .set('Cookie', `accessToken=${accessToken}`)
       
@@ -137,7 +144,7 @@ describe('Auth', () => {
   describe('Refresh access and success', () => {
     it('Should return 200, and successMessage', async () => {
       const session = await createSessionService(userId)
-      const refreshToken = signInJWT({ userId, sessionId: session._id }, 'REFRESH_TOKEN_PRIVATE')
+      const refreshToken = signInJWT({ userId, sessionId: session.id }, 'REFRESH_TOKEN_PRIVATE')
       const { body, statusCode } = await supertest(app).get('/api/auth/refresh')
         .set('Cookie', `refreshToken=${refreshToken}`)
 

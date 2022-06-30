@@ -33,7 +33,7 @@ export const getUserByEmailService = async (email: string) => {
 export const getUserByEmailValidation = async (email: string) => {
   const user = await getUserByEmailService(email)
 
-  if (!user) throw new MyError('Email is not registered as account', 400)
+  if (!user) throw new MyError('Invalid email or password', 401)
 
   return user
 }
@@ -80,7 +80,7 @@ export const verifyUserService = async (id: number, verificationCode: string) =>
 
 export const validatePassword = async (id: number, password: string) => {
   const user = await getUserByIdService(id)
-  if (!user || !user.verified) throw new MyError('User is not verifed', 403)
+  if (!user || !user.verified) throw new MyError('Invalid email or password', 401)
 
   const isValid = await argon2.verify(user.password, password)
 

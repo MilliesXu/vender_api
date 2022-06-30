@@ -4,3 +4,5 @@ test.db
 .env.test
 .env
 test.db-journal
+migrations
+database.db-journal
