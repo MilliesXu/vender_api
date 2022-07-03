@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express'
 
 export class MyError extends Error {
-  private code: number
+  private errorCode: number
 
-  constructor (message: string, code: number) {
+  constructor (message: string, errorCode: number) {
     super(message)
-    this.code = code
+    this.errorCode = errorCode
   }
 }
 
 const errorHandler = async (err: any, req: Request, res: Response, next: NextFunction) => {
   const message = err.message ? err.message : 'Internal server error'
-  const code = err.code ? err.code : 500
+  const code = err.errorCode ? err.errorCode : 500
 
   res.status(code).send({
     errorMessage: message,

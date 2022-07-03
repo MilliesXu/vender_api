@@ -11,37 +11,64 @@ datasource db {
 }
 
 model User {
- id                 Int      @id @default(autoincrement())
- createdAt          DateTime @default(now())
- updatedAt          DateTime @updatedAt
- firstname          String
- lastname           String
- email              String   @unique
- password           String
- verificationCode   String
- passwordResetCode  String?
- verified           Boolean @default(false)
- sessions           Session[]
- materials          Material[]
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  firstname             String
+  lastname              String
+  email                 String   @unique
+  password              String
+  verificationCode      String
+  passwordResetCode     String?
+  verified              Boolean @default(false)
+  sessions              Session[]
+  materials             Material[]
+  productMaterialLines  ProductMaterialLine[]
+  products              Product[]
 }
 
 model Session {
-  id                 Int      @id @default(autoincrement())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  user               User     @relation(fields: [userId], references: [id])
-  userId             Int
-  valid              Boolean  @default(true)
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+  userId                Int
+  valid                 Boolean  @default(true)
 }
 
 model Material {
-  id                 Int      @id @default(autoincrement())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  user               User     @relation(fields: [userId], references: [id])
-  userId             Int
-  name               String
-  description        String?
-  uom                String
-  unit_price         Float    @default(0.00)
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+  userId                Int
+  name                  String
+  description           String?
+  uom                   String
+  unit_price            Float    @default(0.00)
+  productMaterialLines  ProductMaterialLine[]
+}
+
+model ProductMaterialLine {
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+  userId                Int
+  material              Material @relation(fields: [materialId], references: [id])
+  materialId            Int
+  quantity              Float
+  product               Product @relation(fields: [productId], references: [id])
+  productId             Int
+}
+
+model Product {
+  id                    Int      @id @default(autoincrement())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id])
+  userId                Int
+  productMaterialLines  ProductMaterialLine[]
+  name                  String
+  description           String
 }

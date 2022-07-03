@@ -16,7 +16,7 @@ const deserializeUser = async (req: Request, res: Response, next: NextFunction) 
 
     next()
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 

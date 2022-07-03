@@ -32,7 +32,7 @@ export const loginHandler = async (req: Request<{}, {}, LoginInput>, res: Respon
       successMessage: 'Successfully login'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -49,7 +49,7 @@ export const logoutHandler = async (req: Request, res: Response, next: NextFunct
       successMessage: 'Successfully logout'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 

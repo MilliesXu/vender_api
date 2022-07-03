@@ -15,20 +15,23 @@ export const createProductHandler = async (req: Request<{}, {}, CreateProductInp
       successMessage: 'Successfully create a product'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
 export const findOneProductHandler = async (req: Request<FindOneProductParams>, res: Response, next: NextFunction) => {
   try {
     const { productId } = req.params
-    const product = await findOneProductService(productId)
+    const id = parseInt(productId)
+
+    if (id === NaN) throw new MyError('Product not found', 404)
+    const product = await findOneProductService(id)
     
     res.send({
       productInfo: product,
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -40,7 +43,7 @@ export const findProductsHandler = async (req: Request, res: Response, next: Nex
       products: productArray
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -48,31 +51,38 @@ export const updateProductHandler = async (req: Request<UpdateProduct['params'],
   try {
     const { productId } = req.params
     const body = req.body
+    const userId = res.locals.user.userId
+    const id = parseInt(productId)
 
-    const product = await findOneProductService(productId)
-    const updateProduct = await updateProductService(product, body)
+    if (id === NaN) throw new MyError('Product not found', 404)
+
+    await findOneProductService(id)
+    const product = await updateProductService(id, body, userId)
 
     res.send({
-      productInfo: updateProduct,
+      productInfo: product,
       successMessage: 'Successfully update product'
     })
 
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
 export const deleteProductHandler = async (req: Request<FindOneProductParams>, res: Response, next: NextFunction) => {
   try {
     const { productId } = req.params
+    const id = parseInt(productId)
 
-    const product = await findOneProductService(productId)
-    await deleteProductService(product)
+    if (id === NaN) throw new MyError('Product not found', 404)
+
+    const product = await findOneProductService(id)
+    await deleteProductService(id)
 
     res.send({
       successMessage: 'Successfully delete product'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }

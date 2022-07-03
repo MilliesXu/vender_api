@@ -1,12 +1,10 @@
 import 'dotenv/config'
 import supertest from 'supertest'
-import mongoose from 'mongoose'
-import { MongoMemoryServer } from 'mongodb-memory-server'
+import { PrismaClient } from '@prisma/client'
+import argon2 from 'argon2'
 
 import { createServer } from '../utils/server'
 import { signInJWT } from '../utils/jwt'
-import { createUserService } from '../services/userService'
-import { createMaterialService } from '../services/materialService'
 
 const app = createServer()
 
@@ -36,28 +34,55 @@ const materialPayload = {
 }
 
 let token: string
-const productId = new mongoose.Types.ObjectId().toString()
-let id: string
-let materialId: string
+let id: number
+let idLine: number
+let materialId: number
+let prismaGlobal: PrismaClient
+let lineIdToUpdate: number
+let lineIdToDelete: number
 
 describe('Product', () => {
   beforeAll(async () => {
-    const mongoServer = await MongoMemoryServer.create()
+    const prisma = new PrismaClient()
+    prismaGlobal = prisma
+    
+    const user = await prisma.user.create({
+      data: {
+        firstname: userPayload.firstname,
+        lastname: userPayload.lastname,
+        email: userPayload.email,
+        password: await argon2.hash(userPayload.password),
+        verificationCode: '123',
+        verified: true
+      }
+    })
 
-    await mongoose.connect(mongoServer.getUri())
+    id = user.id
 
-    const user = await createUserService(userPayload)
-    const material = await createMaterialService(materialPayload, user._id.toString())
-    user.verified = true
-    await user.save()
+    const material = await prisma.material.create({
+      data: {
+        name: materialPayload.name,
+        description: materialPayload.description,
+        uom: materialPayload.uom,
+        unit_price: materialPayload.unit_price,
+        user: {
+          connect: {
+            id: user.id
+          }
+        }
+      }
+    })
 
-    token = signInJWT({ userId: user._id }, 'ACCESS_TOKEN_PRIVATE')
-    materialId = material._id.toString()
+    token = signInJWT({ userId: user.id }, 'ACCESS_TOKEN_PRIVATE')
+    materialId = material.id
   })
   afterAll(async () => {
-    await mongoose.disconnect()
-
-    await mongoose.connection.close()
+    await prismaGlobal.productMaterialLine.deleteMany({})
+    await prismaGlobal.product.deleteMany({})
+    await prismaGlobal.material.deleteMany({})
+    await prismaGlobal.session.deleteMany({})
+    await prismaGlobal.user.deleteMany({})
+    await prismaGlobal.$disconnect()
   })
   describe('Create product but not login', () => {
     it('Should return 401', async () => {
@@ -71,34 +96,78 @@ describe('Product', () => {
         .expect(400)
     })
   })
+  describe('Create product with no material lines and success', () => {
+    it('Should return 200, productData, and successMessage', async () => {
+      const { body, statusCode } = await supertest(app).post('/api/product')
+        .set('Cookie', `accessToken=${token}`)
+        .send({
+          ...productPayload,
+        })
+      
+      id = body.productInfo.id
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        productInfo: {
+          name: productPayload.name,
+          description: productPayload.description,
+          productMaterialLines: [],
+          user: {
+            firstname: userPayload.firstname,
+            lastname: userPayload.lastname
+          }
+        },
+        successMessage: 'Successfully create a product'
+      })
+    })
+  })
   describe('Create product with material lines and success', () => {
     it('Should return 200, productData, and successMessage', async () => {
       const { body, statusCode } = await supertest(app).post('/api/product')
         .set('Cookie', `accessToken=${token}`)
         .send({
           ...productPayload,
-          lines: [{
+          productMaterialLines: [{
             materialId,
-            quantity: 1.2
+            quantity: 2.1
+          }, {
+            materialId,
+            quantity: 1.5
           }]
         })
-      
-      id = body.productInfo._id
+
+      idLine = body.productInfo.id
+      lineIdToUpdate = body.productInfo.productMaterialLines[0].id
+      lineIdToDelete = body.productInfo.productMaterialLines[1].id
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         productInfo: {
           name: productPayload.name,
           description: productPayload.description,
-          lines: [{
+          productMaterialLines: [{
+            quantity: 2.1,
             material: {
-              _id: materialId,
+              id: materialId,
               name: materialPayload.name,
+              description: materialPayload.description,
+              uom: materialPayload.uom,
               unit_price: materialPayload.unit_price,
-            },
-            quantity: 1.2,
-            user: {
-              firstname: userPayload.firstname,
-              lastname: userPayload.lastname
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+            }
+          }, {
+            quantity: 1.5,
+            material: {
+              id: materialId,
+              name: materialPayload.name,
+              description: materialPayload.description,
+              uom: materialPayload.uom,
+              unit_price: materialPayload.unit_price,
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
             }
           }],
           user: {
@@ -112,17 +181,17 @@ describe('Product', () => {
   })
   describe('Get product but not login', () => {
     it('Should return 401', async () => {
-      await supertest(app).get(`/api/product/${productId}`).expect(401)
+      await supertest(app).get(`/api/product/${0}`).expect(401)
     })
   })
   describe('Get product but id not found', () => {
     it('Should return 404', async () => {
-      await supertest(app).get(`/api/product/${productId}`)
+      await supertest(app).get(`/api/product/${0}`)
         .set('Cookie', `accessToken=${token}`)
         .expect(404)
     })
   })
-  describe('Get product with line and success', () => {
+  describe('Get product without line and success', () => {
     it('Should return 200', async () => {
       const { body, statusCode } = await supertest(app).get(`/api/product/${id}`)
         .set('Cookie', `accessToken=${token}`)
@@ -130,19 +199,54 @@ describe('Product', () => {
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         productInfo: {
-          _id: id,
+          id: id,
           name: productPayload.name,
           description: productPayload.description,
-          lines: [{
+          productMaterialLines: [],
+          user: {
+            firstname: userPayload.firstname,
+            lastname: userPayload.lastname
+          }
+        }
+      })
+    })
+  })
+  describe('Get product with line and success', () => {
+    it('Should return 200', async () => {
+      const { body, statusCode } = await supertest(app).get(`/api/product/${idLine}`)
+        .set('Cookie', `accessToken=${token}`)
+
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        productInfo: {
+          id: idLine,
+          name: productPayload.name,
+          description: productPayload.description,
+          productMaterialLines: [{
+            quantity: 2.1,
             material: {
-              _id: materialId,
+              id: materialId,
               name: materialPayload.name,
+              description: materialPayload.description,
+              uom: materialPayload.uom,
               unit_price: materialPayload.unit_price,
-            },
-            quantity: 1.2,
-            user: {
-              firstname: userPayload.firstname,
-              lastname: userPayload.lastname
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+            }
+          }, {
+            quantity: 1.5,
+            material: {
+              id: materialId,
+              name: materialPayload.name,
+              description: materialPayload.description,
+              uom: materialPayload.uom,
+              unit_price: materialPayload.unit_price,
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
             }
           }],
           user: {
@@ -167,19 +271,43 @@ describe('Product', () => {
       expect(body).toMatchObject({
         products: 
           [{
-              _id: id,
+            id: id,
+            name: productPayload.name,
+            description: productPayload.description,
+            productMaterialLines: [],
+            user: {
+              firstname: userPayload.firstname,
+              lastname: userPayload.lastname
+            }
+          },{
+              id: idLine,
               name: productPayload.name,
               description: productPayload.description,
-              lines: [{
+              productMaterialLines: [{
+                quantity: 2.1,
                 material: {
-                  _id: materialId,
+                  id: materialId,
                   name: materialPayload.name,
+                  description: materialPayload.description,
+                  uom: materialPayload.uom,
                   unit_price: materialPayload.unit_price,
-                },
-                quantity: 1.2,
-                user: {
-                  firstname: userPayload.firstname,
-                  lastname: userPayload.lastname
+                  user: {
+                    firstname: userPayload.firstname,
+                    lastname: userPayload.lastname
+                  }
+                }
+              },{
+                quantity: 1.5,
+                material: {
+                  id: materialId,
+                  name: materialPayload.name,
+                  description: materialPayload.description,
+                  uom: materialPayload.uom,
+                  unit_price: materialPayload.unit_price,
+                  user: {
+                    firstname: userPayload.firstname,
+                    lastname: userPayload.lastname
+                  }
                 }
               }],
               user: {
@@ -192,20 +320,20 @@ describe('Product', () => {
   })
   describe('Update product but not login', () => {
     it('Should return 401', async () => {
-      await supertest(app).put(`/api/product/${productId}`)
+      await supertest(app).put(`/api/product/${0}`)
         .expect(401)
     })
   })
   describe('Update product but no data send', () => {
     it('Should return 400', async () => {
-      await supertest(app).put(`/api/product/${productId}`)
+      await supertest(app).put(`/api/product/${0}`)
         .set('Cookie', `accessToken=${token}`)
         .expect(400)
     })
   })
   describe('Update product but product not found', () => {
     it('Should return 404', async () => {
-      await supertest(app).put(`/api/product/${productId}`)
+      await supertest(app).put(`/api/product/${0}`)
         .set('Cookie', `accessToken=${token}`)
         .send(productUpdatePayload)
         .expect(404)
@@ -220,9 +348,107 @@ describe('Product', () => {
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         productInfo: {
-            _id: id,
+            id: id,
             name: productUpdatePayload.name,
             description: productUpdatePayload.description,
+            productMaterialLines: [],
+            user: {
+              firstname: userPayload.firstname,
+              lastname: userPayload.lastname
+            }
+        },
+        successMessage: 'Successfully update product'
+      })
+    })
+  })
+  describe('Update product with line and success', () => {
+    it('Should return 200, productInfo, and successMessage', async () => {
+      const { body, statusCode } = await supertest(app).put(`/api/product/${idLine}`)
+        .set('Cookie', `accessToken=${token}`)
+        .send({
+          ...productUpdatePayload,
+          createData: [
+            {
+              materialId,
+              quantity: 1.8
+            }, {
+              materialId,
+              quantity: 3.0
+            }
+          ],
+          updateData: [
+            {
+              id: lineIdToUpdate,
+              materialId,
+              quantity: 4.0
+            }
+          ],
+          deleteId: [
+            {
+              id: lineIdToDelete
+            }
+          ]
+        })
+      
+      expect(statusCode).toBe(200)
+      expect(body).toMatchObject({
+        productInfo: {
+            id: idLine,
+            name: productUpdatePayload.name,
+            description: productUpdatePayload.description,
+            productMaterialLines: [{
+              id: lineIdToUpdate,
+              quantity: 4.0,
+              material: {
+                id: materialId,
+                name: materialPayload.name,
+                description: materialPayload.description,
+                uom: materialPayload.uom,
+                unit_price: materialPayload.unit_price,
+                user: {
+                  firstname: userPayload.firstname,
+                  lastname: userPayload.lastname
+                }
+              },
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+            }, {
+              quantity: 1.8,
+              material: {
+                id: materialId,
+                name: materialPayload.name,
+                description: materialPayload.description,
+                uom: materialPayload.uom,
+                unit_price: materialPayload.unit_price,
+                user: {
+                  firstname: userPayload.firstname,
+                  lastname: userPayload.lastname
+                }
+              },
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+            },{
+              quantity: 3.0,
+              material: {
+                id: materialId,
+                name: materialPayload.name,
+                description: materialPayload.description,
+                uom: materialPayload.uom,
+                unit_price: materialPayload.unit_price,
+                user: {
+                  firstname: userPayload.firstname,
+                  lastname: userPayload.lastname
+                }
+              },
+              user: {
+                firstname: userPayload.firstname,
+                lastname: userPayload.lastname
+              }
+            }],
             user: {
               firstname: userPayload.firstname,
               lastname: userPayload.lastname
@@ -234,35 +460,25 @@ describe('Product', () => {
   })
   describe('Delete product but not login', () => {
     it('Should return 401', async () => {
-      await supertest(app).delete(`/api/product/${productId}`)
+      await supertest(app).delete(`/api/product/${0}`)
         .expect(401)
     })
   })
   describe('Delete product but product not found', () => {
     it('Should return 404', async () => {
-      await supertest(app).delete(`/api/product/${productId}`)
+      await supertest(app).delete(`/api/product/${0}`)
         .set('Cookie', `accessToken=${token}`)
         .expect(404)
     })
   })
   describe('Delete product and success', () => {
     it('Should return 200, successMessage', async () => {
-      const { body, statusCode } = await supertest(app).delete(`/api/product/${id}`)
+      const { body, statusCode } = await supertest(app).delete(`/api/product/${idLine}`)
         .set('Cookie', `accessToken=${token}`)
       
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
         successMessage: 'Successfully delete product'
-      })
-    })
-  })
-  describe('Get all product and success', () => {
-    it('Should return 200, and empty array', async () => {
-      const { body, statusCode } = await supertest(app).get(`/api/product/`)
-        .set('Cookie', `accessToken=${token}`)
-      expect(statusCode).toBe(200)
-      expect(body).toMatchObject({
-        products: []
       })
     })
   })

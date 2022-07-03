@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { MyError } from '../middlewares/errorHandler';
 
-import { changePasswordService, createUserService, getUserByEmailService, getUserByIdService, getUsersService, setPasswordCodeService, updateUserProfileService, verifyUserService } from '../services/userService';
+import { changePasswordService, createUserService, getUserByIdService, getUsersService, setPasswordCodeService, updateUserProfileService, verifyUserService } from '../services/userService';
 import { ChangePasswordInput, CreateUserInput, RequestChangePassword, UpdateUserInput, VerificationUserParams } from '../schemas/userSchema';
 import sendMail from '../utils/mailer';
 
@@ -10,7 +10,7 @@ export const getUserHandler = async (req: Request, res: Response, next: NextFunc
     const users = await getUsersService()
     res.send(users)
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -28,7 +28,7 @@ export const getUserProfileHandler = async (req: Request, res: Response, next: N
       email: user.email
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -47,7 +47,7 @@ export const createUserHandler = async (req: Request<{}, {}, CreateUserInput>, r
       successMessage: 'A verification email has been sent'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -69,7 +69,7 @@ export const verificationUserHandler = async (req: Request<VerificationUserParam
       successMessage: 'Successfully verified your account'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -89,7 +89,7 @@ export const updateUserProfileHandler = async (req: Request<{}, {}, UpdateUserIn
     })
   } catch (error: any) {
     if (error.code === 'P2002') next(new MyError('Email is already been used', 400))
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -110,7 +110,7 @@ export const requestChangePasswordHandler = async (req: Request<{}, {}, RequestC
     })
 
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -124,6 +124,6 @@ export const changePasswordHandler = async (req: Request<ChangePasswordInput['pa
       successMessage: 'Your password has been changed'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }

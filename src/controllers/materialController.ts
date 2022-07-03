@@ -15,7 +15,7 @@ export const createMaterialHandler = async (req: Request<{}, {}, CreateMaterialI
       successMessage: 'Successfully create a material'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -31,7 +31,7 @@ export const findOneMaterialHandler = async (req: Request<FindOneMaterialParams>
       materialInfo: material,
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -43,7 +43,7 @@ export const findMaterialsHandler = async (req: Request, res: Response, next: Ne
       materials: materialArray
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -64,7 +64,7 @@ export const updateMaterialHandler = async (req: Request<UpdateMaterial['params'
     })
 
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }
 
@@ -82,6 +82,6 @@ export const deleteMaterialHandler = async (req: Request<FindOneMaterialParams>,
       successMessage: 'Successfully delete material'
     })
   } catch (error: any) {
-    next(new MyError(error.message, error.code))
+    next(new MyError(error.message, error.errorCode))
   }
 }

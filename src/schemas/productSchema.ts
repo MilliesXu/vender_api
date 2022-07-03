@@ -1,7 +1,7 @@
 import { object, string, TypeOf, array, number} from 'zod'
 
 export const createProductMaterialLineSchema = object({
-  materialId: string({
+  materialId: number({
     required_error: 'Material is required'
   }),
   quantity: number({
@@ -10,10 +10,10 @@ export const createProductMaterialLineSchema = object({
 })
 
 export const updateProductMaterialLineSchema = object({
-  _id: string({
+  id: number({
     required_error: 'Id is required'
   }),
-  materialId: string({
+  materialId: number({
     required_error: 'Material is required'
   }),
   quantity: number({
@@ -27,7 +27,7 @@ export const createProductSchema = object({
       required_error: 'Name is required'
     }),
     description: string(),
-    lines: array(createProductMaterialLineSchema).optional()
+    productMaterialLines: array(createProductMaterialLineSchema).optional()
   })
 })
 
@@ -45,14 +45,15 @@ export const updateProductSchema = object({
     name: string({
       required_error: 'Name is required'
     }),
-    description: string()
+    description: string(),
+    createData: array(createProductMaterialLineSchema).optional(),
+    updateData: array(updateProductMaterialLineSchema).optional(),
+    deleteId: array(object({
+      id: number({
+        required_error: 'Line id is required'
+      })
+    })).optional()
   }),
-  deleteId: array(object({
-    _id: string({
-      required_error: 'Line id is required'
-    })
-  })).optional(),
-  lines: array(updateProductMaterialLineSchema).optional()
 })
 
 export type CreateProductInput = TypeOf<typeof createProductSchema>['body']
@@ -60,3 +61,4 @@ export type FindOneProductParams = TypeOf<typeof findOneProductSchema>['params']
 export type UpdateProduct = TypeOf<typeof updateProductSchema>
 
 export type CreateProductMaterialInput = TypeOf<typeof createProductMaterialLineSchema>
+export type UpdateProductMaterialInput = TypeOf<typeof updateProductMaterialLineSchema>
