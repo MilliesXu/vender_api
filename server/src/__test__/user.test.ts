@@ -224,7 +224,7 @@ describe('User', () => {
     })
   })
   describe('Request change password and success', () => {
-    it('Should return 400', async () => {
+    it('Should return 200m and successMessage', async () => {
       const { body, statusCode } = await supertest(app).get('/api/user/requestResetPassword')
         .send({
           email: 'winzchip@gmail.com'

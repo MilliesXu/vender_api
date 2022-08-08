@@ -3,6 +3,13 @@ import nodemailer, { SendMailOptions } from 'nodemailer'
 import { MyError } from '../middlewares/errorHandler'
 import { log } from './logger'
 
+// const createCred = async () => {
+//   const crede = await nodemailer.createTestAccount()
+//   log.info(crede)
+// }
+
+// createCred()
+
 const smtp = {
   user: process.env.SMTP_USER as string,
   pass: process.env.SMTP_PASS as string,

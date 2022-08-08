@@ -120,6 +120,7 @@ describe('Auth', () => {
   describe('Refresh access token token but no refresh token', () => {
     it('Should return 200, and errorMessage', async () => {
       const { body, statusCode } = await supertest(app).get('/api/auth/refresh')
+      console.log(body.errorMessage)
 
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
@@ -128,11 +129,12 @@ describe('Auth', () => {
     })
   })
   describe('Refresh access token token but no session', () => {
-    it('Should return 200, and errorMessage', async () => {
+    it('Should return 401, and errorMessage', async () => {
       const sessionId = new mongoose.Types.ObjectId().toString()
       const refreshToken = signInJWT({ userId, sessionId }, 'REFRESH_TOKEN_PRIVATE')
       const { body, statusCode } = await supertest(app).get('/api/auth/refresh')
         .set('Cookie', `refreshToken=${refreshToken}`)
+      console.log(body.errorMessage)
 
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
