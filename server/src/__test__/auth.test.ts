@@ -1,6 +1,5 @@
 import 'dotenv/config'
 import supertest from 'supertest'
-import mongoose from 'mongoose'
 import { PrismaClient } from '@prisma/client'
 
 import { createServer } from '../utils/server'
@@ -130,7 +129,7 @@ describe('Auth', () => {
   })
   describe('Refresh access token token but no session', () => {
     it('Should return 401, and errorMessage', async () => {
-      const sessionId = new mongoose.Types.ObjectId().toString()
+      const sessionId = '12344asdv'
       const refreshToken = signInJWT({ userId, sessionId }, 'REFRESH_TOKEN_PRIVATE')
       const { body, statusCode } = await supertest(app).get('/api/auth/refresh')
         .set('Cookie', `refreshToken=${refreshToken}`)
