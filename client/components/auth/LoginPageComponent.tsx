@@ -24,7 +24,8 @@ const LoginPageComponent = () => {
         id: 'login',
         title: 'Login',
         message: 'Logging you in',
-        loading: true
+        loading: true,
+        autoClose: false,
       })
     },
     onSuccess: (data) => {
@@ -32,7 +33,9 @@ const LoginPageComponent = () => {
         id: 'login',
         title: 'Login',
         message: `${data.successMessage}`,
-        loading: false
+        loading: false,
+        autoClose: false,
+        color: 'green'
       })
     },
     onError: (error) => {
@@ -40,7 +43,9 @@ const LoginPageComponent = () => {
         id: 'login',
         title: 'Login',
         message: `${error.response?.data.errorMessage}`,
-        loading: false
+        loading: false,
+        autoClose: false,
+        color: 'red'
       })
     }
   })

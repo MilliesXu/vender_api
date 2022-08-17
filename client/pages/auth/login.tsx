@@ -3,7 +3,7 @@ import { NextPage } from "next"
 import { useState } from "react"
 import FooterComponent from "../../components/Footer"
 import HeaderComponent from "../../components/Header"
-import LoginPageComponent from "../../components/LoginPage/LoginPageComponent"
+import LoginPageComponent from "../../components/auth/LoginPageComponent"
 import NavbarComponent from "../../components/Navbar"
 
 const Login: NextPage = () => {

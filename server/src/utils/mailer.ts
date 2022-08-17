@@ -33,7 +33,7 @@ const sendMail = async (payload: SendMailOptions) => {
         reject(new MyError('Failed to send email', 500))
       }
 
-      resolve(log.info(`Preview url: ${nodemailer.getTestMessageUrl(info)}`))
+      resolve(log.info('Successfully send email'))
     })
   })
 }

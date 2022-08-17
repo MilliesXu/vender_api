@@ -22,3 +22,11 @@ export const loginUser = async (payload: {
   const res = await axios.post(`${authBase}/login/`, payload)
   return res.data
 }
+
+export const verifyUser = async (payload: {
+  id: string,
+  verificationCode: string
+}) => {
+  const res = await axios.get(`${userBase}/${payload.id}/${payload.verificationCode}`)
+  return res.data
+}

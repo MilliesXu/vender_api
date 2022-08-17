@@ -30,7 +30,7 @@ export const createUserHandler = catchAsync<CreateUserInput>(async (req, res) =>
     from: 'test@gmail.com',
     to: user.email,
     subject: 'Verified your email',
-    text: `Id = ${user.id}, verification code = ${user.verificationCode}`
+    text: `http://localhost:3000/auth/verify/${user.id}/${user.verificationCode}`
   })
 
   res.send({

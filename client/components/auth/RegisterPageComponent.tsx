@@ -30,7 +30,8 @@ const RegisterPageComponent = () => {
         id: 'register',
         title: 'Creating Account',
         message: 'Please wait while we creating an account for you',
-        loading: true
+        loading: true,
+        autoClose: false,
       })
     },
     onSuccess: (data) => {
@@ -38,7 +39,9 @@ const RegisterPageComponent = () => {
         id: 'register',
         title: 'Creating Account',
         message: `${data.successMessage}`,
-        loading: false
+        loading: false,
+        autoClose: false,
+        color: 'green'
       })
     },
     onError: (error) => {
@@ -46,7 +49,9 @@ const RegisterPageComponent = () => {
         id: 'register',
         title: 'Creating Account',
         message: `${error.response?.data.errorMessage}`,
-        loading: false
+        loading: false,
+        autoClose: false,
+        color: 'red'
       })
     }
   })

@@ -4,7 +4,7 @@ import { useState } from "react";
 import FooterComponent from "../../components/Footer";
 import HeaderComponent from "../../components/Header";
 import NavbarComponent from "../../components/Navbar";
-import RegisterPageComponent from "../../components/RegisterPage/RegisterPageComponent";
+import RegisterPageComponent from "../../components/auth/RegisterPageComponent";
 
 const Register: NextPage = () => {
   const theme = useMantineTheme();
