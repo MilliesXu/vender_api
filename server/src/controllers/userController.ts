@@ -17,6 +17,7 @@ export const getUserProfileHandler = catchAsync(async (req, res) => {
   if (!user.verified) throw new MyError('User is not verified', 403)
 
   res.send({
+    id: user.id,
     firstname: user.firstname,
     lastname: user.lastname,
     email: user.email

@@ -5,9 +5,12 @@ import { useMutation } from "@tanstack/react-query"
 import { AxiosError } from "axios"
 import Head from "next/head"
 import Link from "next/link"
+import { useRouter } from "next/router"
 import { registerUser } from "../../pages/api"
+import { ErrorMessage, SuccessMessage } from "../../types"
 
 const RegisterPageComponent = () => {
+  const router = useRouter()
   const form = useForm({
     initialValues: {
       firstname: '',
@@ -24,7 +27,7 @@ const RegisterPageComponent = () => {
     }
   })
 
-  const mutation = useMutation<{successMessage: string}, AxiosError<{errorMessage: string}>, Parameters<typeof registerUser>['0']>(registerUser, {
+  const mutation = useMutation<SuccessMessage, AxiosError<ErrorMessage>, Parameters<typeof registerUser>['0']>(registerUser, {
     onMutate: () => {
       showNotification({
         id: 'register',

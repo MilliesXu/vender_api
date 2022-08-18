@@ -1,7 +1,5 @@
 import 'dotenv/config'
 import supertest from 'supertest'
-import mongoose from 'mongoose'
-import { MongoMemoryServer } from 'mongodb-memory-server'
 import { PrismaClient } from '@prisma/client'
 
 import { createServer } from '../utils/server'
@@ -21,7 +19,7 @@ const userPayload = {
   userId: 0
 }
 
-const userId = new mongoose.Types.ObjectId().toString()
+const userId = 123
 let id: number
 let idNotVerified: number
 let accessTokenGlobal: string
@@ -127,6 +125,7 @@ describe('User', () => {
 
       expect(statusCode).toBe(200)
       expect(body).toMatchObject({
+        id,
         firstname: userPayload.firstname,
         lastname: userPayload.lastname,
         email: userPayload.email
